@@ -35,7 +35,35 @@ const GRIS: [number, number, number] = [110, 118, 132]
 const MUNICIPIO = 'Ilustre Municipalidad de Tocopilla'
 const PROGRAMA = 'Entrega de Regalos de Navidad 2026'
 
-/** Escudo municipal simplificado dibujado con vectores (no requiere imagen). */
+// Proporción del archivo public/logo-tocopilla.png (738 × 312 px).
+const LOGO_RUTA = '/logo-tocopilla.png'
+const LOGO_PROPORCION = 738 / 312
+let logoEnCache: string | null | undefined
+
+/**
+ * Carga el logo institucional como data URI y lo deja en caché.
+ * Devuelve null si no se puede obtener (por ejemplo, fuera del navegador),
+ * y en ese caso los documentos usan el distintivo dibujado con vectores.
+ */
+async function cargarLogo(): Promise<string | null> {
+  if (logoEnCache !== undefined) return logoEnCache
+  try {
+    const respuesta = await fetch(LOGO_RUTA)
+    if (!respuesta.ok) throw new Error('logo no disponible')
+    const blob = await respuesta.blob()
+    logoEnCache = await new Promise<string>((resolver, rechazar) => {
+      const lector = new FileReader()
+      lector.onload = () => resolver(String(lector.result))
+      lector.onerror = () => rechazar(lector.error)
+      lector.readAsDataURL(blob)
+    })
+  } catch {
+    logoEnCache = null
+  }
+  return logoEnCache
+}
+
+/** Distintivo de respaldo, por si el logo no se pudo cargar. */
 function dibujarLogo(doc: jsPDF, x: number, y: number, tamano = 16): void {
   doc.setDrawColor(...AZUL)
   doc.setFillColor(...AZUL)
@@ -50,19 +78,27 @@ function dibujarLogo(doc: jsPDF, x: number, y: number, tamano = 16): void {
   doc.text('TOCOPILLA', x + tamano / 2, y + tamano - 1.2, { align: 'center' })
 }
 
-function encabezado(doc: jsPDF, subtitulo: string): number {
+function encabezado(doc: jsPDF, subtitulo: string, logo: string | null): number {
   const ancho = doc.internal.pageSize.getWidth()
-  dibujarLogo(doc, 14, 12)
+  // Con logo institucional el texto arranca más a la derecha.
+  let x = 34
+  if (logo) {
+    const anchoLogo = 34
+    doc.addImage(logo, 'PNG', 14, 11, anchoLogo, anchoLogo / LOGO_PROPORCION)
+    x = 14 + anchoLogo + 6
+  } else {
+    dibujarLogo(doc, 14, 12)
+  }
   doc.setTextColor(...AZUL)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
-  doc.text(MUNICIPIO, 34, 18)
+  doc.text(MUNICIPIO, x, 18)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
-  doc.text(PROGRAMA, 34, 24)
+  doc.text(PROGRAMA, x, 24)
   doc.setFontSize(9)
   doc.setTextColor(...GRIS)
-  doc.text(subtitulo, 34, 29.5)
+  doc.text(subtitulo, x, 29.5)
   doc.setDrawColor(...ROJO)
   doc.setLineWidth(0.8)
   doc.line(14, 34, ancho - 14, 34)
@@ -107,13 +143,16 @@ export async function fichasRetiroPDF(fichas: DatosFicha[], nombreArchivo?: stri
 export async function construirFichasRetiro(fichas: DatosFicha[]): Promise<jsPDF> {
   if (!fichas.length) throw new Error('No hay beneficiarios aprobados para generar fichas.')
   const { jsPDF, autoTable, QRCode } = await cargarPdf()
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const logo = await cargarLogo()
+  // compress: comprime los flujos del PDF. Cada ficha lleva un QR y, sin esto,
+  // un lote de varios cientos de fichas produce un archivo enorme.
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
   const ancho = doc.internal.pageSize.getWidth()
 
   for (let i = 0; i < fichas.length; i++) {
     const f = fichas[i]
     if (i > 0) doc.addPage()
-    let y = encabezado(doc, 'Ficha de retiro de regalo')
+    let y = encabezado(doc, 'Ficha de retiro de regalo', logo)
 
     // Folio destacado + código QR con el folio.
     doc.setFillColor(243, 246, 251)
@@ -126,7 +165,8 @@ export async function construirFichasRetiro(fichas: DatosFicha[]): Promise<jsPDF
     doc.setTextColor(...ROJO)
     doc.text(f.folio, 20, y + 19)
 
-    const qr = await QRCode.toDataURL(f.folio, { margin: 0, width: 300 })
+    // 180 px basta para un QR de 20 mm impreso a 300 ppp y pesa mucho menos.
+    const qr = await QRCode.toDataURL(f.folio, { margin: 0, width: 180 })
     doc.addImage(qr, 'PNG', ancho - 40, y + 3, 20, 20)
 
     y += 34
@@ -211,8 +251,9 @@ export async function construirReportePostulaciones(
   resumen: { etiqueta: string; valor: string | number }[],
 ): Promise<jsPDF> {
   const { jsPDF, autoTable } = await cargarPdf()
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' })
-  let y = encabezado(doc, titulo)
+  const logo = await cargarLogo()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape', compress: true })
+  let y = encabezado(doc, titulo, logo)
 
   autoTable(doc, {
     startY: y,

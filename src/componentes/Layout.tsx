@@ -69,10 +69,18 @@ export function Layout({ children }: { children: ReactNode }) {
       <header className="no-imprimir bg-marino-800 text-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link to="/" className="flex items-center gap-3">
-            <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-xl">🎄</span>
+            {/* El logo institucional va sobre un fondo blanco: sus colores no
+                tienen contraste suficiente sobre el azul marino del encabezado. */}
+            <img
+              src="/logo-tocopilla.png"
+              alt="Ilustre Municipalidad de Tocopilla"
+              width={738}
+              height={312}
+              className="h-12 w-auto rounded-lg bg-white px-2.5 py-1.5 sm:h-16"
+            />
             <span className="leading-tight">
-              <span className="block text-sm font-bold sm:text-base">Ilustre Municipalidad de Tocopilla</span>
-              <span className="block text-xs text-marino-200">Navidad 2026</span>
+              <span className="block text-sm font-bold sm:text-base">Navidad 2026</span>
+              <span className="block text-xs text-marino-200">Entrega de regalos · Tocopilla</span>
             </span>
           </Link>
 
