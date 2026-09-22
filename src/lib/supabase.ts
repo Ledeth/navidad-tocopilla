@@ -1,7 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+// Se normalizan los valores: una barra final en la URL (o un espacio al pegar
+// la llave) provoca rutas con doble barra y errores del tipo
+// "Invalid path specified in request URL".
+const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim().replace(/\/+$/, '')
+const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim()
 
 /** true cuando faltan las variables de entorno (se muestra un aviso en pantalla). */
 export const supabaseConfigurado = Boolean(url && anonKey)
@@ -34,6 +37,9 @@ export async function verificarTurnstile(token: string): Promise<void> {
 export function mensajeError(error: unknown): string {
   const bruto = (error as { message?: string })?.message ?? String(error ?? '')
   const m = bruto.toLowerCase()
+  if (m.includes('invalid path specified')) {
+    return 'La dirección del servidor está mal configurada (revise VITE_SUPABASE_URL: no debe terminar en “/”).'
+  }
   if (m.includes('invalid login credentials')) return 'Correo o contraseña incorrectos.'
   if (m.includes('email not confirmed')) return 'Debe confirmar su correo electrónico antes de ingresar.'
   if (m.includes('user already registered')) return 'Ya existe una cuenta con ese correo electrónico.'
