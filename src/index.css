@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/* ─── Paleta institucional ─────────────────────────────────────────────────
+   Azul marino municipal + acento rojo navideño suave. Alto contraste para
+   cumplir con criterios de accesibilidad (WCAG AA).                        */
+@theme {
+  --color-marino-50:  #eef3fb;
+  --color-marino-100: #d6e2f5;
+  --color-marino-200: #aec4e8;
+  --color-marino-300: #7d9dd6;
+  --color-marino-400: #4a6fb5;
+  --color-marino-500: #2b4f93;
+  --color-marino-600: #1d3a73;
+  --color-marino-700: #163059;
+  --color-marino-800: #0f2a50;
+  --color-marino-900: #0a1d38;
+
+  --color-navidad-50:  #fdf1f1;
+  --color-navidad-100: #fadddd;
+  --color-navidad-200: #f3bcbd;
+  --color-navidad-300: #e7908f;
+  --color-navidad-400: #d46464;
+  --color-navidad-500: #b02a30;
+  --color-navidad-600: #93222a;
+  --color-navidad-700: #761c23;
+
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background-color: #f5f7fb;
+  color: #17203a;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Foco siempre visible para navegación por teclado. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-marino-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Enlace para saltar al contenido principal (lectores de pantalla). */
+.saltar-contenido {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--color-marino-800);
+  color: #fff;
+  padding: 0.75rem 1rem;
+}
+.saltar-contenido:focus { left: 0; }
+
+@media print {
+  .no-imprimir { display: none !important; }
+  body { background: #fff; }
+}

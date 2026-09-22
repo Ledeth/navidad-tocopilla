@@ -1,0 +1,8 @@
+project_id = "navidad-tocopilla"
+
+[functions.verificar-turnstile]
+# El formulario público debe poder llamarla antes de existir sesión.
+verify_jwt = false
+
+[functions.crear-usuario-interno]
+verify_jwt = true
